@@ -1,4 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { setCurrentPage, setProduct } from './action';
+import { getCurrentPage, getProduct } from './selector';
 import './App.css';
 
 function App() {
@@ -6,8 +9,7 @@ function App() {
   const itemsPerPage = 10;
   const pageRange = 5;
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [product, setProduct] = useState([]);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     response();
@@ -17,42 +19,42 @@ function App() {
     fetch(url)
       .then((res) => res.json())
       .then((json) => {
-        console.log(json);
-        setProduct(json);
+        dispatch(setProduct(json));
       });
   };
+
+  const product = useSelector(getProduct);
+  const currentPage = useSelector(getCurrentPage);
 
   const totalPages = Math.ceil(product.length / itemsPerPage);
-  console.log("totalPages", totalPages);
-
-  const goToPreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage((prev) => {
-        console.log("prev", prev);
-        const prevPageInCurrentRange = prev - (prev % pageRange === 0 ? pageRange : prev % pageRange);
-        return prevPageInCurrentRange > 0 ? prevPageInCurrentRange : 1;
-      });
-    }
-  };
-
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage((prev) => (prev % pageRange === 0 ? prev + 1 : prev + (pageRange - (prev % pageRange)) + 1));
-    }
-  };
 
   const getPageRange = (currentPage) => {
-    debugger
+    console.log("currentPage", currentPage);
     const pageBlock = Math.ceil(currentPage / pageRange);
+    console.log("pageBlock", pageBlock);
     const start = (pageBlock - 1) * pageRange + 1;
     const end = Math.min(pageBlock * pageRange, totalPages);
     return { start, end };
   };
 
+  const goToPreviousPage = () => {
+    const { start } = getPageRange(currentPage);
+    if (currentPage > 1) {
+      dispatch(setCurrentPage(start - 1));
+    }
+  };
+
+  const goToNextPage = () => {
+    const { end } = getPageRange(currentPage);
+    if (currentPage < totalPages) {
+      dispatch(setCurrentPage(end + 1));
+    }
+  };
+
   const { start, end } = getPageRange(currentPage);
 
-  const changePage = (page) => {
-    setCurrentPage(page);
+   const changePage = (page) => {
+    dispatch(setCurrentPage(page));
   };
 
   const productResponseRange = product.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
